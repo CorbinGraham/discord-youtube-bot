@@ -1,8 +1,8 @@
 # https://github.com/Rapptz/discord.py/blob/async/examples/reply.py
 import discord
+import requests
 import os
 from youtube_dl import YoutubeDL
-from requests import get
 from discord.ext import commands
 from discord.ext.commands import Bot
 from discord.voice_client import VoiceClient
@@ -12,12 +12,11 @@ from discord.utils import get
 import asyncio
 
 # The API token must be set as an environment variable.
-TOKEN = str(os.environ['TOKEN'])
+TOKEN = ''
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix='/', intents=intents)
-
+bot = commands.Bot(command_prefix='$', intents=intents)
 
 # TODO: Implement proper queue
 # TODO: Implement skipping
@@ -38,6 +37,7 @@ async def join(ctx, voice):
     await voice.move_to(channel)
   else:
     voice = await channel.connect()
+  return voice
 
 @bot.command()
 async def play(ctx, *, query):
@@ -49,7 +49,9 @@ async def play(ctx, *, query):
   await join(ctx, voice)
   await ctx.send(f'Now playing.')
 
+  voice = get(bot.voice_clients, guild=ctx.guild)
+
   voice.play(FFmpegPCMAudio(source, **FFMPEG_OPTS), after=lambda e: print('done', e))
   voice.is_playing()
 
-bot.run('token')
+bot.run(TOKEN)
