@@ -1,9 +1,14 @@
 # https://github.com/Rapptz/discord.py/blob/async/examples/reply.py
 import discord
 import os
+from youtube_dl import YoutubeDL
+from requests import get
 from discord.ext import commands
 from discord.ext.commands import Bot
 from discord.voice_client import VoiceClient
+from discord import FFmpegPCMAudio
+from discord.ext import commands
+from discord.utils import get
 import asyncio
 
 # The API token must be set as an environment variable.
@@ -21,40 +26,41 @@ async def on_message(message):
     return
 
   if message.content.startswith('/play'):
-    msg = youtube_player.enqueue_play(message.content.split(" ")[1])
-    connected_users = enqueue_episode.find_users(message)
-    await client.send_message(message.channel, msg)
+    await play(message, message.content.split(" ")[1])
 
-  if message.content.startswith('/skip'):
-    msg = youtube_player.play(message, message.content.split(" "))
-    connected_users = enqueue_episode.find_users(message)
-    await client.send_message(message.channel, msg)
-
-    await client.send_message(message.channel, msg)
-    if msg == 'BAKA! I need something to enqueue!':
-      return
+  # TODO: Implement proper queue
+  # TODO: Implement skipping
+  # TODO: Implement search with options
 
 
-@client.event
-async def on_voice_state_update(before, after):
-  if watched_channel != None:
-    if (before.voice_channel != watched_channel) and (after.voice_channel == watched_channel):
-      await client.send_message(tts_announce_channel, after.name + ' has joined channel', tts = True)
+def search(query):
+  with YoutubeDL({'format': 'bestaudio', 'noplaylist':'True'}) as ydl:
+    try: requests.get(query)
+    except: info = ydl.extract_info(f"ytsearch:{query}", download=False)['entries'][0]
+    else: info = ydl.extract_info(query, download=False)
+  return (info, info['formats'][0]['url'])
 
-    elif (before.voice_channel == watched_channel) and (after.voice_channel != watched_channel):
-      await client.send_message(tts_announce_channel, after.name + ' has left channel', tts = True)
 
-@bot.command(pass_context=True)
-async def join(ctx):
-  author = ctx.message.author
-  channel = author.voice_channel
-  await bot.join_voice_channel(channel)
+async def join(ctx, voice):
+  channel = ctx.author.voice.channel
 
-@client.event
-async def on_ready():
-  print('Logged in as')
-  print(client.user.name)
-  print(client.user.id)
-  print('------')
+  if voice and voice.is_connected():
+    await voice.move_to(channel)
+  else:
+    voice = await channel.connect()
+
+
+@bot.command()
+async def play(ctx, *, query):
+  FFMPEG_OPTS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
+
+  video, source = search(query)
+  voice = get(bot.voice_clients, guild=ctx.guild)
+
+  await join(ctx, voice)
+  await ctx.send(f'Now playing.')
+
+  voice.play(FFmpegPCMAudio(source, **FFMPEG_OPTS), after=lambda e: print('done', e))
+  voice.is_playing()
 
 client.run(TOKEN)
