@@ -12,26 +12,16 @@ from discord.utils import get
 import asyncio
 
 # The API token must be set as an environment variable.
-TOKEN = str(os.environ['002TOKEN'])
+TOKEN = str(os.environ['TOKEN'])
 
-client = discord.Client()
+intents = discord.Intents.default()
+intents.message_content = True
+bot = commands.Bot(command_prefix='/', intents=intents)
 
-bot = commands.Bot(command_prefix="/")
 
-@client.event
-async def on_message(message):
-
-  # we do not want the bot to reply to itself
-  if message.author == client.user:
-    return
-
-  if message.content.startswith('/play'):
-    await play(message, message.content.split(" ")[1])
-
-  # TODO: Implement proper queue
-  # TODO: Implement skipping
-  # TODO: Implement search with options
-
+# TODO: Implement proper queue
+# TODO: Implement skipping
+# TODO: Implement search with options
 
 def search(query):
   with YoutubeDL({'format': 'bestaudio', 'noplaylist':'True'}) as ydl:
@@ -49,7 +39,6 @@ async def join(ctx, voice):
   else:
     voice = await channel.connect()
 
-
 @bot.command()
 async def play(ctx, *, query):
   FFMPEG_OPTS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
@@ -63,4 +52,4 @@ async def play(ctx, *, query):
   voice.play(FFmpegPCMAudio(source, **FFMPEG_OPTS), after=lambda e: print('done', e))
   voice.is_playing()
 
-client.run(TOKEN)
+bot.run('token')
