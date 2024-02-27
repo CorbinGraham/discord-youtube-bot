@@ -2,7 +2,7 @@
 import discord
 import requests
 import os
-from youtube_dl import YoutubeDL
+import yt_dlp
 from discord.ext import commands
 from discord.ext.commands import Bot
 from discord.voice_client import VoiceClient
@@ -23,7 +23,7 @@ video_queue = []
 
 # Use youtube DL to download the youtube video for playing.
 def search(query):
-  with YoutubeDL({'format': 'bestaudio', 'noplaylist':'True'}) as ydl:
+  with yt_dlp.YoutubeDL({'format': 'bestaudio', 'noplaylist':'True'}) as ydl:
     try: requests.get(query)
     except: info = ydl.extract_info(f"ytsearch:{query}", download=False)['entries'][0]
     else: info = ydl.extract_info(query, download=False)
